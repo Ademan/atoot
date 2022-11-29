@@ -38,7 +38,7 @@ class ResponseList(UserList):
 class MastodonAPI:
 
     @classmethod
-    async def create(cls, instance, client_id=None, client_secret=None, 
+    async def create(cls, instance, client_id=None, client_secret=None,
             access_token=None, use_https=True, session=None):
         """Async factory method. 
 
@@ -99,7 +99,7 @@ class MastodonAPI:
 
         self.ratelimit_lastcall = time.time()
 
-    async def __api_request(self, method, url, use_json=False, 
+    async def __api_request(self, method, url, json=None,
             headers={}, params=None, files=None):
         content = None
         url = self.base_url + url
@@ -108,8 +108,8 @@ class MastodonAPI:
             headers["Authorization"] = "Bearer " + self._access_token
 
         kwargs = dict(headers=headers)
-        if use_json == True:
-            kwargs["json"] = params
+        if json is not None:
+            kwargs["json"] = json
         else:
             if method == self.session.get:
                 kwargs["params"] = params
@@ -264,7 +264,7 @@ class MastodonAPI:
         }
         if client_website: params["website"] = client_website
         url = 'http%s://%s/api/v1/apps' % ("s" if use_https else "", instance) 
-        r = await session.post(url, params=params)
+        r = await session.post(url, data=params)
         async with r:
             await check_exception(r)
 
@@ -605,8 +605,7 @@ class MastodonAPI:
         if scheduled_at: params["scheduled_at"] = scheduled_at
         if language: params["language"] = language
 
-        return await self.post('/api/v1/statuses', params=params, 
-                use_json=True, headers=headers)
+        return await self.post('/api/v1/statuses', json=params, headers=headers)
 
     async def delete_status(self, status):
         """
@@ -801,18 +800,18 @@ class MastodonAPI:
     async def list_accounts_add(self, _list, accounts):
         account_ids = [get_id(a) for a in accounts]
         return await self.post('/api/v1/lists/%s/accounts' % get_id(_list), 
-                params={"account_ids": account_ids}, use_json=True)
+                json={"account_ids": account_ids})
 
     async def list_accounts_remove(self, _list, accounts):
         account_ids = [get_id(a) for a in accounts]
         return await self.delete('/api/v1/lists/%s/accounts' % get_id(_list), 
-                params={"account_ids": account_ids}, use_json=True)
+                json={"account_ids": account_ids})
 
     async def markers_get(self):
         return await self.get('/api/v1/markers')
 
     async def markers_set(self, params={}):
-        return await self.post('/api/v1/markers', params=params, use_json=True)
+        return await self.post('/api/v1/markers', json=params)
 
 
     def streaming(self, stream, list_filter=None, tag_filter=None):
